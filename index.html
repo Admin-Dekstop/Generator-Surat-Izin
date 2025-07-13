@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Surat Izin Sekolah</title>
+    
+    <!-- Menggunakan Tailwind CSS untuk styling yang modern dan responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Library jsPDF untuk membuat file PDF di sisi klien (browser) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Menggunakan font Inter dari Google Fonts untuk tampilan yang lebih baik -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Menerapkan font Inter ke seluruh halaman */
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex-grow: 1;
+        }
+        /* Style untuk pesan error dan notifikasi agar terlihat jelas */
+        .message-box {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .error-message {
+            color: #f87171; /* red-400 */
+            background-color: #450a0a; /* red-950 */
+            border: 1px solid #ef4444; /* red-500 */
+        }
+        .info-message {
+            color: #60a5fa; /* blue-400 */
+            background-color: #1e3a8a; /* blue-900 */
+            border: 1px solid #3b82f6; /* blue-500 */
+        }
+        /* Animasi spinner untuk loading */
+        .loader {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+
+    <main class="flex items-center justify-center w-full p-4">
+        <div class="w-full max-w-lg bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl transition-transform duration-300">
+            
+            <!-- Judul Aplikasi -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-blue-600 dark:text-blue-400">Generator Surat Izin</h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">Buat surat izin keluar sekolah dengan mudah.</p>
+            </div>
+            
+            <!-- Formulir Input -->
+            <form id="izinForm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Input Nama Siswa -->
+                    <div>
+                        <label for="namaSiswa" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nama Siswa</label>
+                        <input type="text" id="namaSiswa" name="namaSiswa" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Contoh: Budi Santoso" required>
+                    </div>
+                    <!-- Input Kelas -->
+                    <div>
+                        <label for="kelas" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Kelas</label>
+                        <input type="text" id="kelas" name="kelas" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Contoh: IX A" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Input Tanggal -->
+                    <div>
+                        <label for="tanggal" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal Izin</label>
+                        <input type="date" id="tanggal" name="tanggal" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    </div>
+                     <!-- Input Jam Keluar -->
+                    <div>
+                        <label for="jamKeluar" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Jam Keluar</label>
+                        <input type="time" id="jamKeluar" name="jamKeluar" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    </div>
+                </div>
+
+                <!-- Input Keperluan Izin -->
+                <div class="mb-6">
+                    <label for="keperluan" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Keperluan</label>
+                    <textarea id="keperluan" name="keperluan" rows="4" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Contoh: Periksa gigi di puskesmas terdekat." required></textarea>
+                </div>
+                
+                <!-- Input Nama Guru Piket -->
+                <div class="mb-8">
+                    <label for="guruPiket" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nama Guru Piket</label>
+                    <input type="text" id="guruPiket" name="guruPiket" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Contoh: Drs. Ahmad Dahlan" required>
+                </div>
+                
+                <!-- Tombol untuk membuat PDF -->
+                <button type="submit" id="generatePdfBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg flex items-center justify-center transition-all duration-300">
+                    <span id="pdf-btn-text">Unduh PDF</span>
+                    <div id="pdf-loader" class="loader hidden"></div>
+                </button>
+                
+                <!-- Area untuk menampilkan pesan notifikasi -->
+                <div id="messageBox" class="hidden message-box"></div>
+
+            </form>
+        </div>
+    </main>
+
+    <footer class="text-center p-4 text-gray-500 dark:text-gray-400 text-sm">
+        Dibuat oleh: Mas Andy
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Inisialisasi elemen-elemen DOM
+            const izinForm = document.getElementById('izinForm');
+            const messageBox = document.getElementById('messageBox');
+            const generatePdfBtn = document.getElementById('generatePdfBtn');
+            const pdfBtnText = document.getElementById('pdf-btn-text');
+            const pdfLoader = document.getElementById('pdf-loader');
+            const keperluanTextarea = document.getElementById('keperluan');
+
+            // Set tanggal hari ini sebagai nilai default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tanggal').value = today;
+
+            // Memeriksa ketersediaan pustaka jsPDF
+            if (typeof window.jspdf === 'undefined') {
+                showMessage('Error: Pustaka PDF gagal dimuat. Coba segarkan halaman.', 'error');
+                generatePdfBtn.disabled = true;
+                generatePdfBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+
+            // Fungsi untuk menampilkan pesan (error atau info)
+            function showMessage(text, type = 'info') {
+                messageBox.textContent = text;
+                messageBox.className = `message-box ${type}-message`;
+            }
+
+            // Fungsi untuk mengontrol state loading pada tombol
+            function setButtonLoading(isLoading) {
+                if (isLoading) {
+                    pdfLoader.classList.remove('hidden');
+                    pdfBtnText.textContent = 'Mengunduh...';
+                    generatePdfBtn.disabled = true;
+                    generatePdfBtn.classList.add('opacity-75', 'cursor-wait');
+                } else {
+                    pdfLoader.classList.add('hidden');
+                    pdfBtnText.textContent = 'Unduh PDF';
+                    generatePdfBtn.disabled = false;
+                    generatePdfBtn.classList.remove('opacity-75', 'cursor-wait');
+                }
+            }
+        
+            // Event listener untuk pengiriman form utama (membuat PDF)
+            izinForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const formData = {
+                    namaSiswa: document.getElementById('namaSiswa').value.trim(),
+                    kelas: document.getElementById('kelas').value.trim(),
+                    tanggalInput: document.getElementById('tanggal').value,
+                    jamKeluar: document.getElementById('jamKeluar').value,
+                    keperluan: keperluanTextarea.value.trim(),
+                    guruPiket: document.getElementById('guruPiket').value.trim()
+                };
+
+                if (Object.values(formData).some(val => !val)) {
+                    showMessage('Harap isi semua kolom yang wajib diisi.', 'error');
+                    return;
+                }
+
+                messageBox.className = 'hidden';
+                setButtonLoading(true);
+
+                // Timeout untuk memastikan UI update sebelum proses berat dimulai
+                setTimeout(() => {
+                    try {
+                        generatePdf(formData);
+                        showMessage('PDF berhasil dibuat!', 'info');
+                    } catch (e) {
+                        console.error("PDF Generation Error:", e);
+                        showMessage('Gagal membuat PDF. Silakan coba lagi.', 'error');
+                    } finally {
+                        setButtonLoading(false);
+                    }
+                }, 200);
+            });
+
+            // Fungsi untuk membuat dan mengunduh PDF dengan template baru
+            function generatePdf(data) {
+                const doc = new jsPDF();
+
+                // JUDUL SURAT & KOP
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(14);
+                doc.text("SURAT IZIN KELUAR SISWA", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+                doc.text("SMP NEGERI 2 AMPANA KOTA", doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
+                
+                // Garis Kop Surat
+                doc.setLineWidth(1); // Garis tebal
+                doc.line(20, 32, 190, 32);
+                doc.setLineWidth(0.2); // Garis tipis
+                doc.line(20, 33, 190, 33);
+
+                // ISI SURAT
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(12);
+                let yPosition = 45;
+                doc.text("Yang bertanda tangan di bawah ini, Guru Piket Sekolah, memberikan izin kepada siswa", 20, yPosition);
+                yPosition += 6;
+                doc.text("dengan data sebagai berikut:", 20, yPosition);
+                
+                // Detail siswa
+                yPosition += 12;
+                const tanggalObj = new Date(data.tanggalInput + 'T00:00:00');
+                const tanggalFormatted = tanggalObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+                doc.text(`Nama Siswa`, 30, yPosition);
+                doc.text(`: ${data.namaSiswa}`, 70, yPosition);
+                yPosition += 8;
+                doc.text(`Kelas`, 30, yPosition);
+                doc.text(`: ${data.kelas}`, 70, yPosition);
+                yPosition += 8;
+                doc.text(`Tanggal`, 30, yPosition);
+                doc.text(`: ${tanggalFormatted}`, 70, yPosition);
+                yPosition += 8;
+                doc.text(`Jam Keluar`, 30, yPosition);
+                doc.text(`: ${data.jamKeluar}`, 70, yPosition);
+                yPosition += 8;
+                
+                doc.text(`Keperluan`, 30, yPosition);
+                const keperluanLines = doc.splitTextToSize(data.keperluan, 110);
+                doc.text(`: ${keperluanLines.join('\n  ')}`, 70, yPosition);
+                yPosition += (keperluanLines.length * 6) + 4;
+
+                yPosition += 10;
+                doc.text("Dengan ini siswa tersebut diizinkan keluar dari lingkungan sekolah dengan alasan yang telah", 20, yPosition);
+                yPosition += 6;
+                doc.text("disebutkan di atas.", 20, yPosition);
+                
+                yPosition += 10;
+                doc.text("Demikian surat izin ini dibuat untuk dapat digunakan sebagaimana mestinya.", 20, yPosition);
+
+                // TANDA TANGAN
+                yPosition += 20;
+                doc.text("Guru Piket", 20, yPosition);
+                yPosition += 25;
+                doc.text(data.guruPiket, 20, yPosition);
+                doc.setLineWidth(0.5);
+                doc.line(20, yPosition + 2, 80, yPosition + 2); // Garis bawah nama
+
+                // FOOTER
+                const pageHeight = doc.internal.pageSize.getHeight();
+                doc.setFont("helvetica", "italic");
+                doc.setFontSize(8);
+                doc.setTextColor(150); // Warna abu-abu
+                doc.text("Dibuat oleh: Mas Andy❤", 20, pageHeight - 10);
+                
+                // Simpan PDF
+                const fileName = `SuratIzin_${data.namaSiswa.replace(/ /g, '_')}_${data.tanggalInput}.pdf`;
+                doc.save(fileName);
+            }
+        });
+    </script>
+</body>
+</html>
