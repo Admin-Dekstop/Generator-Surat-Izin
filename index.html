@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Aplikasi untuk membuat surat izin keluar sekolah dengan mudah, dilengkapi fitur unggah logo, edit kop surat, dan riwayat penyimpanan.">
-    <title>Generator Surat Izin Sekolah V2</title>
+    <title>Generator Surat Izin (Logo Diperbaiki)</title>
     
     <!-- Menggunakan Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -278,45 +278,58 @@
             const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
             const pageWidth = doc.internal.pageSize.getWidth();
             const margin = 15;
-            let yPosition = 20;
-
+            
             // --- KOP SURAT ---
+            // Posisi Y awal untuk blok kop surat
+            let yPosition = 15; 
+            
+            // Gambar logo jika ada
             if (logoBase64) {
                 try {
                     const imgProps = doc.getImageProperties(logoBase64);
                     const aspectRatio = imgProps.width / imgProps.height;
-                    const imgHeight = 20;
+                    const imgHeight = 20; // Tinggi logo 20mm
                     const imgWidth = imgHeight * aspectRatio;
-                    doc.addImage(logoBase64, 'JPEG', margin, 15, imgWidth, imgHeight);
-                } catch(e) {
-                    console.error("Error adding image: ", e);
+                    doc.addImage(logoBase64, 'JPEG', margin, yPosition, imgWidth, imgHeight);
+                } catch (e) {
+                    console.error("Gagal menambahkan gambar: ", e);
                     showMessage("Gagal memuat logo. Pastikan format file benar (JPG/PNG).", "error");
                 }
             }
 
+            // Posisi Y untuk teks kop, disesuaikan agar terlihat rapi di sebelah logo
+            let textY = yPosition + 7; 
             doc.setFont("helvetica", "bold");
             doc.setFontSize(14);
-            doc.text(data.kop.namaSekolah.toUpperCase(), pageWidth / 2, yPosition, { align: 'center' });
-            yPosition += 7;
-            
+            doc.text(data.kop.namaSekolah.toUpperCase(), pageWidth / 2, textY, { align: 'center' });
+            textY += 7;
+
             if (data.kop.alamatSekolah) {
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(10);
-                doc.text(data.kop.alamatSekolah, pageWidth / 2, yPosition, { align: 'center' });
-                yPosition += 5;
+                doc.text(data.kop.alamatSekolah, pageWidth / 2, textY, { align: 'center' });
             }
-            
-            yPosition += 2;
-            doc.setLineWidth(1); doc.line(margin, yPosition, pageWidth - margin, yPosition);
+
+            // PERBAIKAN: Atur posisi garis di bawah blok kop (logo dan teks)
+            // Logo berada di y=15 dengan tinggi 20, jadi bagian bawahnya di y=35.
+            // Kita letakkan garis di bawahnya, misal di y=38.
+            yPosition = 38; 
+
+            doc.setLineWidth(1);
+            doc.line(margin, yPosition, pageWidth - margin, yPosition); // Garis tebal
             yPosition += 1;
-            doc.setLineWidth(0.2); doc.line(margin, yPosition, pageWidth - margin, yPosition);
+            doc.setLineWidth(0.2);
+            doc.line(margin, yPosition, pageWidth - margin, yPosition); // Garis tipis
+
+            // Atur posisi Y untuk konten di bawah garis kop
             yPosition += 10;
 
             // --- JUDUL SURAT ---
             doc.setFont("helvetica", "bold");
             doc.setFontSize(12);
             doc.text("SURAT IZIN KELUAR SEKOLAH", pageWidth / 2, yPosition, { align: 'center' });
-            doc.setLineWidth(0.5); doc.line(pageWidth/2 - 35, yPosition + 1, pageWidth/2 + 35, yPosition + 1);
+            doc.setLineWidth(0.5);
+            doc.line(pageWidth / 2 - 35, yPosition + 1, pageWidth / 2 + 35, yPosition + 1);
             yPosition += 10;
 
             // --- ISI SURAT ---
@@ -326,7 +339,7 @@
             yPosition += 10;
             
             const detailXStart = margin + 10;
-            const valueXStart = detailXStart + 30;
+            const valueXStart = detailXStart + 35; // Beri jarak lebih untuk titik dua
             const tanggalFormatted = new Date(data.tanggalInput + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             
             doc.text(`Nama Siswa`, detailXStart, yPosition); doc.text(`: ${data.namaSiswa}`, valueXStart, yPosition); yPosition += 8;
@@ -340,10 +353,8 @@
             
             doc.text(`Keperluan`, detailXStart, yPosition);
             const keperluanLines = doc.splitTextToSize(data.keperluan, pageWidth - valueXStart - margin);
-            doc.text(`: ${keperluanLines[0]}`, valueXStart, yPosition);
-            if (keperluanLines.length > 1) {
-                doc.text(keperluanLines.slice(1), valueXStart + 2, yPosition + 6);
-            }
+            doc.text(`:`, valueXStart - 2, yPosition); // Titik dua terpisah agar rapi
+            doc.text(keperluanLines, valueXStart + 2, yPosition);
             yPosition += (keperluanLines.length * 6) + 12;
 
             doc.text("Demikian surat izin ini dibuat untuk dapat dipergunakan sebagaimana mestinya.", margin, yPosition);
